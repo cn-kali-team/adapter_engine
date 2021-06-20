@@ -1,0 +1,6 @@
+include MANIFEST.in
+include LICENSE
+include README.md
+recursive-include adapter_engine *
+recursive-exclude adapter_engine __pycache__
+recursive-exclude adapter_engine *.py[co]
