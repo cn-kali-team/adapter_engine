@@ -78,10 +78,12 @@ class WhatWeb:
         response: 首页的请求响应
         """
         self.response = response
-        self.not_allow_lang = self.__get_not_allow_lang(response=response)  # 判断是否为Web的时候已经把请求头的语言提取出来了
         self.fingerprints = fingerprints
         self.web_name_list = []
         self.web_info_list = []
+        self.not_allow_lang = []
+        if response:  # 判断是否为Web的时候已经把请求头的语言提取出来了
+            self.not_allow_lang = self.__get_not_allow_lang(response=response)
 
     @staticmethod
     def __get_not_allow_lang(response):
