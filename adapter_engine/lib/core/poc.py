@@ -10,7 +10,7 @@ from requests.exceptions import TooManyRedirects
 from adapter_engine.lib.core.common import parse_target_url
 from adapter_engine.lib.core.data import conf
 # from adapter_engine.lib.core.data import logger
-from adapter_engine.lib.core.enums import OUTPUT_STATUS, CUSTOM_LOGGING, ERROR_TYPE_ID, POC_CATEGORY
+from adapter_engine.lib.core.enums import OUTPUT_STATUS, ERROR_TYPE_ID, POC_CATEGORY
 from adapter_engine.lib.core.exception import AdapterValidationException
 from adapter_engine.lib.core.interpreter_option import OptString, OptInteger, OptIP, OptPort, OptBool
 
@@ -71,10 +71,10 @@ class POCBase(object):
         return value
 
     def get_infos(self):
-        '''
+        """
         得到Poc的信息，返回dict
         :return:
-        '''
+        """
         fields = ["name", "author", "references", "desc", "current_protocol", "tags"]
         data = {}
 
@@ -171,8 +171,6 @@ class POCBase(object):
                     # logger.debug('POC: {0} time-out retry failed!'.format(self.name))
                 conf.retry -= 1
             else:
-                msg = "connect target '{0}' failed!".format(target if conf.ppt else target)
-                # logger.error(msg)
                 output = Output(self)
 
         except HTTPError as e:
@@ -182,16 +180,12 @@ class POCBase(object):
 
         except ConnectionError as e:
             self.expt = (ERROR_TYPE_ID.CONNECTIONERROR, e)
-            msg = "connect target '{0}' failed!".format(target if conf.ppt else target)
-            # logger.error(msg)
             output = Output(self)
 
         except TooManyRedirects as e:
             self.expt = (ERROR_TYPE_ID.TOOMANYREDIRECTS, e)
             # logger.debug(str(e))
             output = Output(self)
-
-
         except BaseException as e:
             self.expt = (ERROR_TYPE_ID.OTHER, e)
             # TODO 将错误信息传回服务器

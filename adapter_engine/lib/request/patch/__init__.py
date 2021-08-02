@@ -4,12 +4,16 @@ from adapter_engine.lib.core.exception import AdapterIncompleteRead
 from .remove_ssl_verify import remove_ssl_verify
 from .remove_warnings import disable_warnings
 from .add_httpraw import patch_add_raw
+from .hook_request import patch_session
+
 
 def patch_all():
     urllib3.response.HTTPResponse._update_chunk_length = _update_chunk_length
     disable_warnings()
     remove_ssl_verify()
     patch_add_raw()
+    patch_session()
+
 
 def _update_chunk_length(self):
     # First, we'll figure out length of a chunk and then

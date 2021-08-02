@@ -1,7 +1,7 @@
 import hashlib
 
 
-def cachedmethod(f, cache=None):
+def cached_method(f, cache=None):
     """
     Method with a cached content
     Reference: http://code.activestate.com/recipes/325205-cache-decorator-in-python-24/
