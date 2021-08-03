@@ -95,7 +95,7 @@ class WhatWeb:
             if flag in str(response.cookies):
                 cookie_to_lang_map.pop(flag)
                 return cookie_to_lang_map.values()
-        return None
+        return []
 
     def what_web_scan(self, http_host_port):
         self.web_name_list = []
@@ -170,7 +170,7 @@ class WhatWeb:
             if match_keyword and any([kw not in text for kw in match_keyword]):
                 continue
             self.web_name_list.append(match_rule['name'])
-            # debug_info(match_rule)
+            print(match_rule)
 
     def scan_with_cms(self, host, path, fingerprints):
         response = self._send_request(host, path)
