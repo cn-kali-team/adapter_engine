@@ -140,33 +140,37 @@ class WhatWeb:
             # debug_info(match_rule)
 
     def match_web_rules(self, fingerprints, response=None, web_info=None):
-        try:
-            if response is not None:
-                status_code = response.status_code
-                headers = response.headers
-                text = response.text
-            elif web_info is not None:
-                status_code = web_info.get('status_code')
-                headers = web_info.get('headers')
-                text = web_info.get('text')
-            else:
+        if hasattr(response, 'status_code') and hasattr(response, 'headers') and hasattr(response, 'text'):
+            status_code = response.status_code
+            headers = response.headers
+            text = response.text
+        elif 'status_code' in web_info and 'headers' in web_info and 'text' in web_info:
+            status_code = web_info.get('status_code', 0)
+            headers = web_info.get('headers', {})
+            text = web_info.get('text', '')
+        else:
+            return False
+        for match_rule in fingerprints:
+            match_status_code = match_rule['status_code']
+            match_headers = match_rule['headers']
+            match_keyword = match_rule['keyword']
+            if not any([match_status_code, match_headers, match_keyword]):
                 return False
-            for match_rule in fingerprints:
-                match_status_code = match_rule['status_code']
-                match_headers = match_rule['headers']
-                match_keyword = match_rule['keyword']
-                if not any([match_status_code, match_headers, match_keyword]):
-                    return False
-                if match_status_code and (int(status_code) != int(match_status_code)):
+            if match_status_code and (int(status_code) != int(match_status_code)):
+                continue
+            if match_headers:
+                flag = False
+                for key, value in match_headers.items():
+                    if not headers.get(key):  # 连这个Key都没有的
+                        flag = True
+                    elif value != '*' and value not in headers.get(key):  # 不是*，匹配不到值
+                        flag = True
+                if flag:
                     continue
-                if match_headers and any([kw not in str(headers) for kw in match_headers]):
-                    continue
-                if match_keyword and any([kw not in text for kw in match_keyword]):
-                    continue
-                self.web_name_list.append(match_rule['name'])
-                # debug_info(match_rule)
-        except Exception:
-            pass
+            if match_keyword and any([kw not in text for kw in match_keyword]):
+                continue
+            self.web_name_list.append(match_rule['name'])
+            # debug_info(match_rule)
 
     def scan_with_cms(self, host, path, fingerprints):
         response = self._send_request(host, path)
