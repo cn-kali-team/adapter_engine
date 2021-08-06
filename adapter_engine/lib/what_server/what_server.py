@@ -290,7 +290,7 @@ class ServerDetectionTemplate(threading.Thread):
     服务识别，接收主机和端口队列
     """
 
-    def __init__(self, web_info_queue, all_target_server_queue: Queue, service_probe: Dict, **kwargs):
+    def __init__(self, web_info_queue, all_target_server_queue, service_probe: Dict, **kwargs):
         """`
         web_info_queue: Web指纹识别后的队列
         all_target_server_queue: 保存web和server信息的队列
