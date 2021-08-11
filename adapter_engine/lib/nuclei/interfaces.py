@@ -7,12 +7,7 @@ class Nuclei(object):
     def __init__(self, templates_yaml_json):
         self.__templates = templates_yaml_json
 
-    def __dir__(self):
-        return ['wtf']
-
     def execute(self, target, params=None):
-        if params is None:
-            ext_result = {}
         res = {}
         template_name = self.__templates.get('id', md5(str(self.__templates).encode()).hexdigest())
         match_status = False

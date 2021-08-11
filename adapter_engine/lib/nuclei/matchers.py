@@ -37,9 +37,7 @@ def match_logic(rule, response):
         elif match_type == 'size' or match_type == 'dsl':
             # TODO
             pass
-        else:
-            pass
-        if rule.get('negative'):
+        if rule.get('negative'):  # 取反
             return not is_match
         return is_match
     except Exception as E:

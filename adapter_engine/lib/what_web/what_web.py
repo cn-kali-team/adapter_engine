@@ -170,7 +170,6 @@ class WhatWeb:
             if match_keyword and any([kw not in text for kw in match_keyword]):
                 continue
             self.web_name_list.append(match_rule['name'])
-            print(match_rule)
 
     def scan_with_cms(self, host, path, fingerprints):
         response = self._send_request(host, path)

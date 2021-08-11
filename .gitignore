@@ -1,5 +1,6 @@
 # Byte-compiled / optimized / DLL files
 __pycache__/
+nuclei-templates/
 *.py[cod]
 *$py.class
 
