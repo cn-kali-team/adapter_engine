@@ -41,5 +41,4 @@ def match_logic(rule, response):
             return not is_match
         return is_match
     except Exception as E:
-        print(E)
         return False
