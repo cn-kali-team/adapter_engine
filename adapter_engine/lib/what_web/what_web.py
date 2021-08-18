@@ -325,7 +325,7 @@ class WebDetectionTemplate(threading.Thread):
         for scheme in ['https', 'http']:
             try:
                 urllib3.disable_warnings()
-                response = requests.get(scheme + "://" + host_port, timeout=15, headers=DEFAULT_HEADERS, verify=False,
+                response = requests.get(scheme + "://" + host_port, timeout=3, headers=DEFAULT_HEADERS, verify=False,
                                         allow_redirects=False)
                 if response.status_code:
                     web_name = []
