@@ -114,7 +114,7 @@ class WhatWeb:
         with ThreadPoolExecutor() as executor:
             nice_futures = [
                 executor.submit(self.scan_with_cms_first, http_host_port, path, self.fingerprints.pop(path)) for
-                path in nice_path]
+                path in nice_path if path in self.fingerprints]
         wait(fs=nice_futures, return_when=ALL_COMPLETED)
         with ThreadPoolExecutor() as executor:
             icon_futures = []
@@ -236,7 +236,7 @@ class WhatWeb:
     @staticmethod
     def _send_request(host, path=None, **kwargs):
         urllib3.disable_warnings()
-        kwargs.setdefault("timeout", 3)
+        kwargs.setdefault("timeout", 5)
         try:
             url = urljoin(host, path)
             response = requests.get(url, headers=DEFAULT_HEADERS, verify=False, allow_redirects=False, **kwargs)
@@ -325,7 +325,7 @@ class WebDetectionTemplate(threading.Thread):
         for scheme in ['https', 'http']:
             try:
                 urllib3.disable_warnings()
-                response = requests.get(scheme + "://" + host_port, timeout=3, headers=DEFAULT_HEADERS, verify=False,
+                response = requests.get(scheme + "://" + host_port, timeout=5, headers=DEFAULT_HEADERS, verify=False,
                                         allow_redirects=False)
                 if response.status_code:
                     web_name = []
