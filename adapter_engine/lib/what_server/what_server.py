@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import re
 import codecs
 import socket
@@ -58,8 +59,10 @@ class ServiceScan:
         """
         proto = probe['protocol']
         payload = probe['directive_str']
-        payload, _ = codecs.escape_decode(payload)
-
+        try:
+            payload = codecs.escape_decode(payload)[0]
+        except Exception:
+            pass
         response = ""
         # 对协议类型进行扫描
         if proto.upper() == protocol.upper():
@@ -305,13 +308,6 @@ class ServerDetectionTemplate(threading.Thread):
         web_info = result.result()
         if web_info:
             self.__all_target_server_queue.put(web_info)
-            for k in ['probe', 'match']:
-                try:
-                    web_info.pop(k)
-                except KeyError:
-                    pass
-            if hasattr(self.__web_info_queue, "ack"):
-                self.__web_info_queue.ack(web_info)
 
     def run(self):
         with ThreadPoolExecutor(max_workers=2) as executor:
