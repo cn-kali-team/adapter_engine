@@ -2,10 +2,8 @@ import ast
 import hashlib
 import importlib.machinery
 import importlib.util
-import inspect
 import pickle
 from importlib.abc import Loader
-import marshal
 from adapter_engine.lib.core.data import kb
 from adapter_engine.lib.core.data import logger
 from adapter_engine.lib.nuclei.interfaces import Nuclei
@@ -61,7 +59,7 @@ class PocLoader(Loader):
         filename = self.get_filename(self.fullname)
         poc_code = self.get_data(filename)
         try:
-            exec(marshal.loads(poc_code), module.__dict__)
+            exec(pickle.loads(poc_code), module.__dict__)
         except Exception as err:
             logger.error("Poc: '{}' exec arise error: {} ".format(filename, err))
 
