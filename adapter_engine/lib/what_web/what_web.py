@@ -335,7 +335,7 @@ class WebDetectionTemplate(threading.Thread):
                         what_web_ins = WhatWeb(response=response, fingerprints=self.__web_fingerprint.copy())
                         web_name = what_web_ins.what_web_scan(scheme + "://" + host_port)
                         web_info = what_web_ins.web_info_list
-                    title = ""  # self.__get_title(response)
+                    title = self.__get_title(response)
                     web_info_result['is_web'] = True
                     web_info_result['what_web'] = list(set(web_name))
                     web_info_result['scheme'] = scheme
