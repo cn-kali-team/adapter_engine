@@ -3,12 +3,12 @@ import base64
 import re
 import codecs
 import hashlib
+from abc import ABC
 from pathlib import Path
 import requests
 import threading
 import urllib3
 from concurrent.futures import ThreadPoolExecutor, wait, ALL_COMPLETED, Future
-from abc import ABC
 from html.parser import HTMLParser
 from urllib.parse import urlparse, urljoin
 from adapter_engine.lib.core.settings import DEFAULT_HEADERS
@@ -282,9 +282,6 @@ class TitleParser(HTMLParser, ABC):
 
 
 class WebDetectionTemplate(threading.Thread):
-    def __dir__(self):
-        pass
-
     """
     Web识别，接收主机和端口队列
     """
@@ -305,9 +302,6 @@ class WebDetectionTemplate(threading.Thread):
     def __web_detection_done(self, future: Future):
         web_info_result = future.result()
         if web_info_result:
-            host, port = web_info_result.get('target').split(":")
-            if hasattr(self.__host_port_queue, 'ack'):
-                self.__host_port_queue.ack([host, int(port)])
             self.__web_info_queue.put(web_info_result)
 
     @staticmethod
@@ -358,11 +352,7 @@ class WebDetectionTemplate(threading.Thread):
             futures = []
             while self.__host_port_queue.qsize():
                 host, port = self.__host_port_queue.get()
-                if host == "END" and port == "END":
-                    if hasattr(self.__host_port_queue, 'ack'):
-                        self.__host_port_queue.ack([host, port])
-                else:
-                    web_executor = executor.submit(self.__try_is_web, {'target': f'{host}:{port}'})
-                    web_executor.add_done_callback(self.__web_detection_done)
-                    futures.append(web_executor)
+                web_executor = executor.submit(self.__try_is_web, {'target': f'{host}:{port}'})
+                web_executor.add_done_callback(self.__web_detection_done)
+                futures.append(web_executor)
         wait(futures, return_when=ALL_COMPLETED)
