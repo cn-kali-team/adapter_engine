@@ -180,35 +180,35 @@ class WhatWeb:
     def fingerprint_helper(response):
         web_fingerprint_dict = {}
         try:
-            # icon_parser = FaviconIcon()
-            # icon_parser.feed(response.text)
-            # urllib3.disable_warnings()
-            # if response.request.path_url == '/yunsee_not_found_test':
-            #     path = '/404'
-            # elif response.request.path_url == '/':
-            #     icon_parser.favicon_ico.add('favicon.ico')
-            #     path = response.request.path_url
-            # else:
-            #     path = response.request.path_url
-            web_fingerprint_dict.setdefault("path", "path")
+            icon_parser = FaviconIcon()
+            icon_parser.feed(response.text)
+            urllib3.disable_warnings()
+            if response.request.path_url == '/yunsee_not_found_test':
+                path = '/404'
+            elif response.request.path_url == '/':
+                icon_parser.favicon_ico.add('favicon.ico')
+                path = response.request.path_url
+            else:
+                path = response.request.path_url
+            web_fingerprint_dict.setdefault("path", path)
             web_fingerprint_dict.setdefault("status_code", response.status_code)
             web_fingerprint_dict.setdefault("headers", dict(response.headers))
             web_fingerprint_dict.setdefault("text", response.text)
 
             icon_info_list = []
-            # if icon_parser.favicon_ico:
-            #     for icon_path in set(urljoin("", path) for path in icon_parser.favicon_ico):
-            #         icon_url = urljoin(response.url, icon_path)
-            #         icon_resp = requests.get(icon_url, verify=False, allow_redirects=False, headers=DEFAULT_HEADERS)
-            #         if icon_resp.status_code != 200:
-            #             continue
-            #         icon_info = {
-            #             'path': urlparse(icon_url).path,
-            #             'md5': hashlib.md5(icon_resp.content).hexdigest(),
-            #             'mmh3': mmh3(codecs.encode(icon_resp.content, "base64")),
-            #             'base64': base64.b64encode(icon_resp.content).decode('utf-8')
-            #         }
-            #         icon_info_list.append(icon_info)
+            if icon_parser.favicon_ico:
+                for icon_path in set(urljoin("", path) for path in icon_parser.favicon_ico):
+                    icon_url = urljoin(response.url, icon_path)
+                    icon_resp = requests.get(icon_url, verify=False, allow_redirects=False, headers=DEFAULT_HEADERS)
+                    if icon_resp.status_code != 200:
+                        continue
+                    icon_info = {
+                        'path': urlparse(icon_url).path,
+                        'md5': hashlib.md5(icon_resp.content).hexdigest(),
+                        'mmh3': mmh3(codecs.encode(icon_resp.content, "base64")),
+                        'base64': base64.b64encode(icon_resp.content).decode('utf-8')
+                    }
+                    icon_info_list.append(icon_info)
             web_fingerprint_dict.setdefault('icon', icon_info_list)
             if response.is_redirect:
                 web_fingerprint_dict.setdefault("is_redirect", True)
@@ -335,7 +335,7 @@ class WebDetectionTemplate(threading.Thread):
                         what_web_ins = WhatWeb(response=response, fingerprints=self.__web_fingerprint.copy())
                         web_name = what_web_ins.what_web_scan(scheme + "://" + host_port)
                         web_info = what_web_ins.web_info_list
-                    title = ""  # self.__get_title(response)
+                    title = self.__get_title(response)
                     web_info_result['is_web'] = True
                     web_info_result['what_web'] = list(set(web_name))
                     web_info_result['scheme'] = scheme
