@@ -310,7 +310,7 @@ class ServerDetectionTemplate(threading.Thread):
             self.__all_target_server_queue.put(web_info)
 
     def run(self):
-        with ThreadPoolExecutor(max_workers=2) as executor:
+        with ThreadPoolExecutor(max_workers=4) as executor:
             futures = []
             server_scan = ServiceScan(service_probe=self.__nmap_service_probe)
             while self.__web_info_queue.qsize():

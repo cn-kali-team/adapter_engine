@@ -348,7 +348,7 @@ class WebDetectionTemplate(threading.Thread):
         return web_info_result
 
     def run(self):
-        with ThreadPoolExecutor(max_workers=2) as executor:
+        with ThreadPoolExecutor(max_workers=4) as executor:
             futures = []
             while self.__host_port_queue.qsize():
                 host, port = self.__host_port_queue.get()
