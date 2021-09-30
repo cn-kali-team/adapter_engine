@@ -5,7 +5,6 @@ import socket
 import traceback
 import contextlib
 import threading
-from queue import Queue
 from typing import Dict
 from concurrent.futures import ThreadPoolExecutor, wait, ALL_COMPLETED, Future, as_completed
 
