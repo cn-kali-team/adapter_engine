@@ -12,6 +12,7 @@ from concurrent.futures import ThreadPoolExecutor, wait, ALL_COMPLETED, Future
 from html.parser import HTMLParser
 from urllib.parse import urlparse, urljoin
 from adapter_engine.lib.core.settings import DEFAULT_HEADERS
+from queue import Queue, Full, Empty
 
 
 def mmh3(key, seed=0x0):
@@ -286,7 +287,7 @@ class WebDetectionTemplate(threading.Thread):
     Web识别，接收主机和端口队列
     """
 
-    def __init__(self, host_open_port_queue, web_info_queue, web_fingerprint, **kwargs):
+    def __init__(self, host_open_port_queue: Queue, web_info_queue: Queue, web_fingerprint, **kwargs):
         """`
         host_open_port_queue: 主机名和开放的端口队列
         web_info_queue: 保存web信息的队列
@@ -350,9 +351,12 @@ class WebDetectionTemplate(threading.Thread):
     def run(self):
         with ThreadPoolExecutor() as executor:
             futures = []
-            while self.__host_port_queue.qsize():
-                host, port = self.__host_port_queue.get()
-                web_executor = executor.submit(self.__try_is_web, {'target': f'{host}:{port}'})
-                web_executor.add_done_callback(self.__web_detection_done)
-                futures.append(web_executor)
+            while not self.__host_port_queue.empty():
+                try:
+                    host, port = self.__host_port_queue.get_nowait()
+                    web_executor = executor.submit(self.__try_is_web, {'target': f'{host}:{port}'})
+                    web_executor.add_done_callback(self.__web_detection_done)
+                    futures.append(web_executor)
+                except Empty:
+                    pass
         wait(futures, return_when=ALL_COMPLETED)

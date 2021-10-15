@@ -7,6 +7,7 @@ import contextlib
 import threading
 from typing import Dict
 from concurrent.futures import ThreadPoolExecutor, wait, ALL_COMPLETED, Future, as_completed
+from queue import Queue, Full, Empty
 
 SERVER_SCAN_SOCKET_TIMEOUT = 3  # 等待welcome banner的超时,5秒
 SERVER_SCAN_SOCKET_READ_BUFFER_SIZE = 1024  # 接受banner的缓冲区
@@ -266,7 +267,7 @@ class ServerDetectionTemplate(threading.Thread):
     服务识别，接收主机和端口队列
     """
 
-    def __init__(self, web_info_queue, all_target_server_queue, service_probe: Dict, **kwargs):
+    def __init__(self, web_info_queue: Queue, all_target_server_queue: Queue, service_probe: Dict, **kwargs):
         """`
         web_info_queue: Web指纹识别后的队列
         all_target_server_queue: 保存web和server信息的队列
@@ -286,9 +287,12 @@ class ServerDetectionTemplate(threading.Thread):
         with ThreadPoolExecutor() as executor:
             futures = []
             server_scan = ServiceScan(service_probe=self.__nmap_service_probe)
-            while self.__web_info_queue.qsize():
-                web_info = self.__web_info_queue.get()
-                server_info_executor = executor.submit(server_scan.scan, web_info)
-                server_info_executor.add_done_callback(self.__server_detection_done)
-                futures.append(server_info_executor)
+            while not self.__web_info_queue.empty():
+                try:
+                    web_info = self.__web_info_queue.get_nowait()
+                    server_info_executor = executor.submit(server_scan.scan, web_info)
+                    server_info_executor.add_done_callback(self.__server_detection_done)
+                    futures.append(server_info_executor)
+                except Empty:
+                    pass
         wait(futures, return_when=ALL_COMPLETED)
