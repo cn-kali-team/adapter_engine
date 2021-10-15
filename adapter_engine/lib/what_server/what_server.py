@@ -242,22 +242,11 @@ class ServiceScan:
         for probe in probes:
             if probe.get("ports"):
                 ports = probe['ports']
-                if self.is_port_in_range(port, ports):
+                if port in ports:
                     if not probe.get('rarity'):
                         probe['rarity'] = '0'
                     included.append(probe)
                 else:  # exclude ports
-                    if not probe.get('rarity'):
-                        probe['rarity'] = '0'
-                    excluded.append(probe)
-
-            elif probe.get("ssl_ports"):
-                ssl_ports = probe['ssl_ports']
-                if self.is_port_in_range(port, ssl_ports):
-                    if not probe.get('rarity'):
-                        probe['rarity'] = '0'
-                    included.append(probe)
-                else:  # exclude ssl_ports
                     if not probe.get('rarity'):
                         probe['rarity'] = '0'
                     excluded.append(probe)
@@ -270,21 +259,6 @@ class ServiceScan:
         included = sorted(included, key=lambda x: int(x['rarity']))
         excluded = sorted(excluded, key=lambda x: int(x['rarity']))
         return included, excluded
-
-    @staticmethod
-    def is_port_in_range(port, nmap_port_rule):
-        bret = False
-
-        ports = nmap_port_rule.split(',')  # split into serval string parts
-        if str(port) in ports:
-            bret = True
-        else:
-            for nmap_port in ports:
-                if "-" in nmap_port:
-                    s, e = nmap_port.split('-')
-                    if int(port) in range(int(s), int(e)):
-                        bret = True
-        return bret
 
 
 class ServerDetectionTemplate(threading.Thread):
