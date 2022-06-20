@@ -79,6 +79,7 @@ class WhatWeb:
         fingerprints: 指纹库
         response: 首页的请求响应
         """
+        self.cache = {}
         self.response = response
         self.fingerprints = fingerprints
         self.web_name_list = []
@@ -112,73 +113,45 @@ class WhatWeb:
         return True
 
     def __scan_in_thread(self, http_host_port):
-        nice_path = ['/', '/yunsee_not_found_test']
-        with ThreadPoolExecutor() as executor:
-            nice_futures = [
-                executor.submit(self.scan_with_cms_first, http_host_port, path, self.fingerprints.pop(path)) for
-                path in nice_path if path in self.fingerprints]
-        wait(fs=nice_futures, return_when=ALL_COMPLETED)
-        with ThreadPoolExecutor() as executor:
-            icon_futures = []
-            for web_info in self.web_info_list:
-                for icon in web_info.get('icon', []):
-                    if icon.get('path') in self.fingerprints:
-                        icon_future = executor.submit(self.match_favicon_hash, icon,
-                                                      self.fingerprints.pop(icon.get('path')))
-                        icon_futures.append(icon_future)
-        wait(fs=icon_futures, return_when=ALL_COMPLETED)
-        with ThreadPoolExecutor() as executor:
-            all_futures = [executor.submit(self.scan_with_cms, http_host_port, path, self.fingerprints.pop(path))
-                           for path in list(self.fingerprints) if self.is_allow_uri(path)]
-        wait(fs=all_futures, return_when=ALL_COMPLETED)
+        for fingerprint in self.fingerprints:
+            self.scan_with_cms_first(http_host_port, fingerprint.get("path"), fingerprint)
         return list(set(self.web_name_list))
 
-    def match_favicon_hash(self, icon_info, fingerprints):
-        hash_set = {icon_info.get('md5'), icon_info.get('mmh3')}
-        for match_rule in fingerprints:
-            if match_rule['favicon_hash'] and not (hash_set.intersection(match_rule['favicon_hash'])):
-                continue
-            self.web_name_list.append(match_rule['name'])
-            # debug_info(match_rule)
-
-    def match_web_rules(self, fingerprints, response=None, web_info=None):
-        if hasattr(response, 'status_code') and hasattr(response, 'headers') and hasattr(response, 'text'):
-            status_code = response.status_code
-            headers = response.headers
-            text = response.text
-        elif 'status_code' in web_info and 'headers' in web_info and 'text' in web_info:
+    def match_web_rules(self, fingerprints, web_info=None):
+        if 'status_code' in web_info and 'headers' in web_info and 'text' in web_info:
             status_code = web_info.get('status_code', 0)
             headers = web_info.get('headers', {})
-            text = web_info.get('text', '')
+            text = web_info.get('text', '').lower()
+            favicons = set([icon.get("md5") for icon in web_info.get('icon', [])])
         else:
             return False
-        for match_rule in fingerprints:
-            match_status_code = match_rule['status_code']
-            match_headers = match_rule['headers']
-            match_keyword = match_rule['keyword']
-            if not any([match_status_code, match_headers, match_keyword]):
+        for hk in list(headers.keys()):
+            headers[hk.lower()] = headers.pop(hk).lower()
+        match_status_code = fingerprints['status_code']
+        match_headers = fingerprints['headers']
+        match_keyword = fingerprints['keyword']
+        match_favicon = set(fingerprints['favicon_hash'])
+        if match_favicon and favicons.intersection(match_favicon):
+            self.web_name_list.append(fingerprints['name'])
+            return False
+        if not any([match_status_code, match_headers, match_keyword]):
+            return False
+        if match_status_code != 0 and (int(status_code) != int(match_status_code)):
+            return False
+        if match_headers:
+            flag = False
+            for key, value in match_headers.items():
+                if not headers.get(key):  # 连这个Key都没有的
+                    flag = True
+                elif value != '*' and value.lower() not in headers.get(key, "").lower():  # 不是*，匹配不到值
+                    flag = True
+            if flag:
                 return False
-            if match_status_code and (int(status_code) != int(match_status_code)):
-                continue
-            if match_headers:
-                flag = False
-                for key, value in match_headers.items():
-                    if not headers.get(key):  # 连这个Key都没有的
-                        flag = True
-                    elif value != '*' and value not in headers.get(key):  # 不是*，匹配不到值
-                        flag = True
-                if flag:
-                    continue
-            if match_keyword and any([kw not in text for kw in match_keyword]):
-                continue
-            self.web_name_list.append(match_rule['name'])
+        if match_keyword and any([kw.lower() not in text for kw in match_keyword]):
+            return False
+        self.web_name_list.append(fingerprints['name'])
 
-    def scan_with_cms(self, host, path, fingerprints):
-        response = self._send_request(host, path)
-        self.match_web_rules(response=response, fingerprints=fingerprints)
-
-    @staticmethod
-    def fingerprint_helper(response):
+    def fingerprint_helper(self, response):
         web_fingerprint_dict = {}
         try:
             icon_parser = FaviconIcon()
@@ -200,7 +173,7 @@ class WhatWeb:
             if icon_parser.favicon_ico:
                 for icon_path in set(urljoin("", path) for path in icon_parser.favicon_ico):
                     icon_url = urljoin(response.url, icon_path)
-                    icon_resp = requests.get(icon_url, verify=False, allow_redirects=False, headers=DEFAULT_HEADERS)
+                    icon_resp = self._send_request(response.url, icon_path)
                     if icon_resp.status_code != 200:
                         continue
                     icon_info = {
@@ -235,8 +208,10 @@ class WhatWeb:
             self.match_web_rules(web_info=web_info, fingerprints=fingerprints)
             self.web_info_list.append(web_info)
 
-    @staticmethod
-    def _send_request(host, path=None, **kwargs):
+    def _send_request(self, host, path=None, **kwargs):
+        cache_key = host + path
+        if cache_key in self.cache:
+            return self.cache.get(cache_key)
         urllib3.disable_warnings()
         kwargs.setdefault("timeout", 3)
         try:
@@ -244,6 +219,7 @@ class WhatWeb:
             response = requests.get(url, headers=DEFAULT_HEADERS, verify=False, allow_redirects=False, **kwargs)
         except Exception:
             response = None
+        self.cache.setdefault(cache_key, response)
         return response
 
 
