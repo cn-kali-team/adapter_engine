@@ -200,7 +200,7 @@ class WhatWeb:
         else:
             response = self._send_request(host, path)
         web_info = self.fingerprint_helper(response=response)
-        if path == '/' and len(self.web_name_list) == 0:
+        if path == '/' and len(self.web_info_list) == 0:
             self.web_info_list.append(web_info)
         self.match_web_rules(web_info=web_info, fingerprints=fingerprints)
         if web_info.get('is_redirect'):
